@@ -1,0 +1,25 @@
+version: "3.7"
+
+services:
+  # Hub + Reverse-proxy
+  jupyterhub:
+    build: ./jupyterhub
+    image: jupyterhub_img
+    container_name: jupyterhub
+    ports:
+      - "80:8000"
+    volumes:
+      # Allow JupyterHub+DockerSpawner to take control over Docker for bringing up/down instances
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      # Storage for JupyterHub data (db of user, auth, tokens, internal states, ...)
+      - "jupyterhub_data:/srv/jupyterhub"
+    environment:
+      # All containers will join this network
+      - DOCKER_NETWORK_NAME=${COMPOSE_PROJECT_NAME}_default
+      # Docker will internally resolve HUB_IP
+      - HUB_IP=jupyterhub
+      - HOST
+    restart: on-failure
+
+volumes:
+  jupyterhub_data:
