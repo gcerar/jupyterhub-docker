@@ -18,7 +18,10 @@ services:
       - DOCKER_NETWORK_NAME=${COMPOSE_PROJECT_NAME}_default
       # Docker will internally resolve HUB_IP
       - HUB_IP=jupyterhub
+      # Passthrough hostname defined in .env
       - HOST
+      # Passthrough list of admins listed in .env
+      - ADMIN_USERS
     restart: on-failure
 
 volumes:

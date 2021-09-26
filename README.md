@@ -1,6 +1,6 @@
-# JupyterHub deployment in use [internally] at SensorLab at Jožef Stefan Institute
+# JupyterHub deployment for internal use at SensorLab
 
-The project is based on [defeo/jupyterhub-docker](https://github.com/defeo/jupyterhub-docker/) and inspired by [blog #1](https://tustunkok.github.io/tutorial/notes-to-myself/vps/2020/05/16/how-to-create-a-gpu-powered-containerized-multi-user-jupyterhub-research-server.html), [blog #2](https://hackmd.io/@DanielChen/Sy81P-Aw4?type=view) with modifications for our usecase.
+The project is based on [defeo/jupyterhub-docker](https://github.com/defeo/jupyterhub-docker/) and inspired by [blog #1](https://tustunkok.github.io/tutorial/notes-to-myself/vps/2020/05/16/how-to-create-a-gpu-powered-containerized-multi-user-jupyterhub-research-server.html), [blog #2](https://hackmd.io/@DanielChen/Sy81P-Aw4?type=view) with modifications for our use case.
 
 ## Features
 
@@ -8,17 +8,17 @@ The project is based on [defeo/jupyterhub-docker](https://github.com/defeo/jupyt
 - Central authentication using [JupyterHub's NativeAuthenticator](https://github.com/jupyterhub/nativeauthenticator);
 - User data persistence;
 - Shared folder among users;
-- Access to NVIDIA GPUs on host workstation;
+- Access to NVIDIA GPUs on host infrastructure;
 
 ## TODOs
 
-- [ ] Use Traefik as reverse-proxy (instead of current NodeJS's dynamic-proxy);
+- [ ] Use Traefik or Nginx as reverse-proxy (instead of current NodeJS's dynamic-proxy);
 - [x] GPU passthrough into container;
   - [x] Sort out GPU access for TensorFlow [help](https://hackmd.io/@DanielChen/Sy81P-Aw4?type=view);
   - [ ] Sort out GPU reservation and/or sharing (Options: vGPU, work queue);
 - [ ] Decide whether we have user data persistence in Docker volumes or directly on a hard drive;
   - [ ] Docker volumes [backup script](https://gist.github.com/pirate/265e19a8a768a48cf12834ec87fb0eed);
-- [ ] Migrate from `docker-compose` --> `docker-swarm` ([example](https://github.com/jupyterhub/dockerspawner/blob/main/examples/swarm/docker-compose.yml));
+- [ ] Migrate from `docker-compose` to `docker-swarm` for scalability ([example](https://github.com/jupyterhub/dockerspawner/blob/main/examples/swarm/docker-compose.yml));
 - [x] Take advantage of [docker-stacks](https://github.com/jupyter/docker-stacks) containers;
 - [ ] Docker image with [C++ REPL kernel](https://blog.jupyter.org/interactive-workflows-for-c-with-jupyter-fe9b54227d92);
 

@@ -614,7 +614,7 @@ c.JupyterHub.services = [{
     'command': [
         sys.executable,
         '-m', 'jupyterhub_idle_culler',
-        '--timeout=3600'
+        '--timeout=5400' # shutdown inactive instances after 90mins.
     ],
 }]
 
@@ -644,13 +644,15 @@ c.JupyterHub.shutdown_on_logout = True
 #    - simple: jupyterhub.spawner.SimpleLocalProcessSpawner
 #  Default: 'jupyterhub.spawner.LocalProcessSpawner'
 c.JupyterHub.spawner_class = 'dockerspawner.DockerSpawner'
-#c.DockerSpawner.image = os.environ['DOCKER_JUPYTER_CONTAINER']
+
+# Allowed selectable images when log in into JupyterHub
 c.DockerSpawner.allowed_images = {
     "Minimal Notebook (Python)": "jupyter/minimal-notebook",
     #"Scipy Notebook (Python)": "jupyter/scipy-notebook",
     "Datascience Notebook (Python+Julia+R)": "jupyter/datascience-notebook",
 }
 
+# Network to connect new instances. See `docker-compose.yml` file.
 c.DockerSpawner.network_name = os.environ['DOCKER_NETWORK_NAME']
 
 # user data persistence
@@ -663,21 +665,19 @@ c.DockerSpawner.volumes = {
     'jupyterhub-data': '/home/jovyan/data',
 }
 
+# If True, delete containers when servers are stopped.
+# This will destroy any data in the container not stored in mounted volumes.
 c.DockerSpawner.remove = True
 
-# This is works fine, when nvidia-docker2 is installed.
-#c.DockerSpawner.extra_host_config = {'runtime': 'nvidia'}
-#c.DockerSpawner.extra_create_kwargs = {'runtime': 'nvidia'}
-
-
-# Docker-compose does not have support for `--gpus` call parameter to give access to GPUs.
+# New JupyterLab instances are spawned by JupyterHub instance and not through CLI. Because of that,
+# there is no straighforward way to pass GPUs into container, unlike `--gpus all` when using Docker directly.
 # Workaround: https://github.com/jupyterhub/dockerspawner/issues/244#issuecomment-785866378
 import docker
 c.DockerSpawner.extra_host_config = {
     "device_requests": [
         docker.types.DeviceRequest(
             count=-1,
-            capabilities=[["gpu", 'utility']],
+            capabilities=[["gpu"]],
         ),
     ],
 }
@@ -1161,8 +1161,11 @@ c.Spawner.start_timeout = 360
 #  
 #  Defaults to an empty set, in which case no user has admin access.
 #  Default: set()
-admin_users = set(os.environ.get("ADMIN_USERS", "").split(' '))
-c.Authenticator.admin_users = admin_users
+def get_admin_users() -> set:
+    admins = os.environ.get('ADMIN_USERS', '').strip().split()
+    return set(admins)
+
+c.Authenticator.admin_users = get_admin_users()
 
 ## Set of usernames that are allowed to log in.
 #  
