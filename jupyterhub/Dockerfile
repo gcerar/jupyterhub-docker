@@ -1,13 +1,13 @@
-FROM jupyterhub/jupyterhub:1.4.2
+FROM jupyterhub/jupyterhub:2.0.0
 
 COPY jupyterhub_config.py /etc/jupyterhub/
 COPY logo.svg /srv/logo.svg
 
 RUN : \
-    && pip install --no-cache --quiet  \
-        jupyterhub-idle-culler==1.1 \
+    && pip install --no-cache --quiet \
+        jupyterhub-idle-culler==1.2.1 \
         dockerspawner==12.1.0 \
-        jupyterhub-nativeauthenticator==0.0.7 \
+        jupyterhub-nativeauthenticator==1.0.5 \
     && :
 
 # Use --config=<path> or -f=<path>

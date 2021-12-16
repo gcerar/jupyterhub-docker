@@ -1,6 +1,8 @@
 version: "3.7"
 
 services:
+  
+
   # Hub + Reverse-proxy
   jupyterhub:
     build: ./jupyterhub
@@ -23,6 +25,7 @@ services:
       # Passthrough list of admins listed in .env
       - ADMIN_USERS
     restart: on-failure
+    #command: jupyterhub upgrade-db
 
 volumes:
   jupyterhub_data:
