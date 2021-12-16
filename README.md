@@ -18,15 +18,17 @@ The project is based on [defeo/jupyterhub-docker](https://github.com/defeo/jupyt
   - [ ] Sort out GPU reservation and/or sharing (Options: vGPU, work queue);
 - [ ] Decide whether we have user data persistence in Docker volumes or directly on a hard drive;
   - [ ] Docker volumes [backup script](https://gist.github.com/pirate/265e19a8a768a48cf12834ec87fb0eed);
-- [ ] Migrate from `docker-compose` to `docker-swarm` for scalability ([example](https://github.com/jupyterhub/dockerspawner/blob/main/examples/swarm/docker-compose.yml));
+- [ ] Migration to more scable option:
+  - Migrate from `docker-compose` to `docker-swarm` for scalability ([example](https://github.com/jupyterhub/dockerspawner/blob/main/examples/swarm/docker-compose.yml));
+  - Migrate to Kubernetes
 - [x] Take advantage of [docker-stacks](https://github.com/jupyter/docker-stacks) containers;
 - [ ] Docker image with [C++ REPL kernel](https://blog.jupyter.org/interactive-workflows-for-c-with-jupyter-fe9b54227d92);
 
 ### Installation prerequirements
 
 - install `docker` and `docker-compose`;
+- install `nvidia-docker2` (see [discussion](https://github.com/NVIDIA/nvidia-docker/issues/1268#issuecomment-632692949));
 - install `nvidia-container-toolkit`;
-- ~~install `nvidia-docker2` (see [discussion](https://github.com/NVIDIA/nvidia-docker/issues/1268#issuecomment-632692949));~~
 
 ### Run
 

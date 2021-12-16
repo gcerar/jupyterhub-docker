@@ -79,6 +79,14 @@ c.Application.log_level = 'WARN'
 #  Default: False
 # c.JupyterHub.answer_yes = False
 
+## The default amount of records returned by a paginated endpoint
+#  Default: 50
+# c.JupyterHub.api_page_default_limit = 50
+
+## The maximum amount of records that can be returned at once
+#  Default: 200
+# c.JupyterHub.api_page_max_limit = 200
+
 ## PENDING DEPRECATION: consider using services
 #  
 #  Dict of token:username to be loaded into the database.
@@ -113,6 +121,7 @@ c.Application.log_level = 'WARN'
 #  Currently installed: 
 #    - default: jupyterhub.auth.PAMAuthenticator
 #    - dummy: jupyterhub.auth.DummyAuthenticator
+#    - null: jupyterhub.auth.NullAuthenticator
 #    - pam: jupyterhub.auth.PAMAuthenticator
 #  Default: 'jupyterhub.auth.PAMAuthenticator'
 c.JupyterHub.authenticator_class = 'nativeauthenticator.NativeAuthenticator'
@@ -462,6 +471,28 @@ c.JupyterHub.init_spawners_timeout = 2 * 60
 #  Default: {}
 # c.JupyterHub.load_groups = {}
 
+## List of predefined role dictionaries to load at startup.
+#  
+#  For instance::
+#  
+#      load_roles = [
+#                      {
+#                          'name': 'teacher',
+#                          'description': 'Access to users' information and group membership',
+#                          'scopes': ['users', 'groups'],
+#                          'users': ['cyclops', 'gandalf'],
+#                          'services': [],
+#                          'groups': []
+#                      }
+#                  ]
+#  
+#  All keys apart from 'name' are optional. See all the available scopes in the
+#  JupyterHub REST API documentation.
+#  
+#  Default roles are defined in roles.py.
+#  Default: []
+# c.JupyterHub.load_roles = []
+
 ## The date format used by logging formatters for %(asctime)s
 #  See also: Application.log_datefmt
 # c.JupyterHub.log_datefmt = '%Y-%m-%d %H:%M:%S'
@@ -476,7 +507,8 @@ c.JupyterHub.init_spawners_timeout = 2 * 60
 
 ## Specify path to a logo image to override the Jupyter logo in the banner.
 #  Default: ''
-c.JupyterHub.logo_file = '/srv/logo.svg'
+if os.path.exists('/srv/logo.svg'):
+    c.JupyterHub.logo_file = '/srv/logo.svg'
 
 ## Maximum number of concurrent named servers that can be created by a user at a
 #  time.
@@ -554,8 +586,6 @@ c.JupyterHub.logo_file = '/srv/logo.svg'
 #    - default: jupyterhub.proxy.ConfigurableHTTPProxy
 #  Default: 'jupyterhub.proxy.ConfigurableHTTPProxy'
 c.JupyterHub.proxy_class = 'jupyterhub.proxy.ConfigurableHTTPProxy'
-
-
 
 ## DEPRECATED since version 0.8. Use ConfigurableHTTPProxy.command
 #  Default: []
@@ -647,9 +677,9 @@ c.JupyterHub.spawner_class = 'dockerspawner.DockerSpawner'
 
 # Allowed selectable images when log in into JupyterHub
 c.DockerSpawner.allowed_images = {
-    "Minimal Notebook (Python)": "jupyter/minimal-notebook",
+    "Minimal Notebook (Python)": "jupyter/minimal-notebook:hub-2.0.0",
     #"Scipy Notebook (Python)": "jupyter/scipy-notebook",
-    "Datascience Notebook (Python+Julia+R)": "jupyter/datascience-notebook",
+    "Datascience Notebook (Python+Julia+R)": "jupyter/datascience-notebook:hub-2.0.0",
 }
 
 # Network to connect new instances. See `docker-compose.yml` file.
@@ -676,8 +706,8 @@ import docker
 c.DockerSpawner.extra_host_config = {
     "device_requests": [
         docker.types.DeviceRequest(
-            count=-1,
             capabilities=[["gpu"]],
+            count=-1,
         ),
     ],
 }
@@ -786,6 +816,21 @@ c.DockerSpawner.extra_host_config = {
 #  backed up to a local file automatically.
 #  Default: False
 # c.JupyterHub.upgrade_db = False
+
+## Return 503 rather than 424 when request comes in for a non-running server.
+#  
+#  Prior to JupyterHub 2.0, we returned a 503 when any request came in for a user
+#  server that was currently not running. By default, JupyterHub 2.0 will return
+#  a 424 - this makes operational metric dashboards more useful.
+#  
+#  JupyterLab < 3.2 expected the 503 to know if the user server is no longer
+#  running, and prompted the user to start their server. Set this config to true
+#  to retain the old behavior, so JupyterLab < 3.2 can continue to show the
+#  appropriate UI when the user server is stopped.
+#  
+#  This option will be removed in a future release.
+#  Default: False
+# c.JupyterHub.use_legacy_stopped_server_status_code = False
 
 ## Callable to affect behavior of /user-redirect/
 #  
@@ -968,10 +1013,21 @@ c.Spawner.default_url = '/lab'
 
 ## The IP address (or hostname) the single-user server should listen on.
 #  
+#  Usually either '127.0.0.1' (default) or '0.0.0.0'.
+#  
 #  The JupyterHub proxy implementation should be able to send packets to this
 #  interface.
-#  Default: ''
-# c.Spawner.ip = ''
+#  
+#  Subclasses which launch remotely or in containers should override the default
+#  to '0.0.0.0'.
+#  
+#  .. versionchanged:: 2.0
+#      Default changed to '127.0.0.1', from ''.
+#      In most cases, this does not result in a change in behavior,
+#      as '' was interpreted as 'unspecified',
+#      which used the subprocesses' own default, itself usually '127.0.0.1'.
+#  Default: '127.0.0.1'
+# c.Spawner.ip = '127.0.0.1'
 
 ## Minimum number of bytes a single-user notebook server is guaranteed to have
 #  available.
@@ -1021,6 +1077,18 @@ c.Spawner.default_url = '/lab'
 #  path! They can do so with many other means.
 #  Default: ''
 # c.Spawner.notebook_dir = ''
+
+## Allowed roles for oauth tokens.
+#  
+#  This sets the maximum and default roles assigned to oauth tokens issued by a
+#  single-user server's oauth client (i.e. tokens stored in browsers after
+#  authenticating with the server), defining what actions the server can take on
+#  behalf of logged-in users.
+#  
+#  Default is an empty list, meaning minimal permissions to identify users, no
+#  actions can be taken on their behalf.
+#  Default: traitlets.Undefined
+# c.Spawner.oauth_roles = traitlets.Undefined
 
 ## An HTML form for options a user can specify on launching their server.
 #  
@@ -1149,6 +1217,9 @@ c.Spawner.start_timeout = 360
 ## Base class for implementing an authentication provider for JupyterHub
 
 ## Set of users that will have admin rights on this JupyterHub.
+#
+#  Note: As of JupyterHub 2.0, full admin rights should not be required, and more
+#  precise permissions can be managed via roles.
 #  
 #  Admin users have extra privileges:
 #   - Use the admin panel to see list of users logged in
@@ -1171,7 +1242,8 @@ c.Authenticator.admin_users = get_admin_users()
 #  
 #  Use this with supported authenticators to restrict which users can log in.
 #  This is an additional list that further restricts users, beyond whatever
-#  restrictions the authenticator has in place.
+#  restrictions the authenticator has in place. Any user in this list is granted
+#  the 'user' role on hub startup.
 #  
 #  If empty, does not perform any additional restriction.
 #  
@@ -1201,6 +1273,20 @@ c.Authenticator.admin_users = get_admin_users()
 #  .. versionadded:: 0.8
 #  Default: False
 # c.Authenticator.auto_login = False
+
+## Automatically begin login process for OAuth2 authorization requests
+#  
+#  When another application is using JupyterHub as OAuth2 provider, it sends
+#  users to `/hub/api/oauth2/authorize`. If the user isn't logged in already, and
+#  auto_login is not set, the user will be dumped on the hub's home page, without
+#  any context on what to do next.
+#  
+#  Setting this to true will automatically redirect users to login if they aren't
+#  logged in *only* on the `/hub/api/oauth2/authorize` endpoint.
+#  
+#  .. versionadded:: 1.5
+#  Default: False
+# c.Authenticator.auto_login_oauth2_authorize = False
 
 ## Set of usernames that are not allowed to log in.
 #  
@@ -1326,14 +1412,3 @@ c.Authenticator.admin_users = get_admin_users()
 ## The number of threads to allocate for encryption
 #  Default: 12
 # c.CryptKeeper.n_threads = 12
-
-#------------------------------------------------------------------------------
-# Pagination(Configurable) configuration
-#------------------------------------------------------------------------------
-## Default number of entries per page for paginated results.
-#  Default: 100
-# c.Pagination.default_per_page = 100
-
-## Maximum number of entries per page for paginated results.
-#  Default: 250
-# c.Pagination.max_per_page = 250
